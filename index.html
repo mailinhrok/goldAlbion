@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giá Vàng Albion Online - MaiLinhLatui</title>
+    <!-- Thêm thu vi?n Plotly và CSS c?n thi?t -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        #chart-container {
+            width: 80%;
+            margin: 50px auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Ph?n t? div d? ch?a bi?u d? -->
+    <div id="chart-container"></div>
+
+    <script>
+        // Chuy?n d?i d? li?u t? API
+        function convertData(data) {
+            var results = [];
+            var group = [];
+
+            data.forEach(function (item) {
+                var date_time = new Date(item.timestamp);
+                group.push({
+                    "date": date_time,
+                    "open": item.price,
+                    "high": item.price,
+                    "low": item.price,
+                    "close": item.price
+                });
+
+                if (date_time.getHours() % 4 === 3) {
+                    var aggregated_data = {
+                        "date": group[group.length - 1].date,
+                        "open": group[0].open,
+                        "high": Math.max.apply(null, group.map(function (i) { return i.open; })),
+                        "low": Math.min.apply(null, group.map(function (i) { return i.low; })),
+                        "close": group[group.length - 1].close
+                    };
+                    results.push(aggregated_data);
+                    group = [];
+                }
+            });
+
+            return results;
+        }
+
+        // T?o bi?u d? Candlestick b?ng Plotly
+        function createCandlestickChart(data) {
+            var fig = {
+                data: [{
+                    x: data.map(function (item) { return item.date; }),
+                    open: data.map(function (item) { return item.open; }),
+                    high: data.map(function (item) { return item.high; }),
+                    low: data.map(function (item) { return item.low; }),
+                    close: data.map(function (item) { return item.close; }),
+                    type: 'candlestick'
+                }],
+                layout: {
+                    title: 'Albion Online Candlestick Chart'
+                }
+            };
+
+            // Hi?n th? bi?u d? trong ph?n t? div có id là 'chart-container'
+            Plotly.newPlot('chart-container', fig);
+        }
+
+        // L?y d? li?u t? API
+        var api_url = "https://east.albion-online-data.com/api/v2/stats/gold?date=2023-11-6&end_date=" + new Date().toISOString().split('T')[0];
+        fetch(api_url)
+            .then(response => response.json())
+            .then(data => {
+                // Chuy?n d?i và v? bi?u d? khi d? li?u du?c t?i thành công
+                var convertedData = convertData(data);
+                createCandlestickChart(convertedData);
+            })
+            .catch(error => console.error('Error fetching data:', error));
+    </script>
+</body>
+</html>
